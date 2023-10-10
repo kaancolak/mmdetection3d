@@ -40,7 +40,7 @@ class PillarFeatureNet(nn.Module):
 
     def __init__(self,
                  in_channels: Optional[int] = 4,
-                 feat_channels: Optional[tuple] = (64, ),
+                 feat_channels: Optional[tuple] = (64,),
                  with_distance: Optional[bool] = False,
                  with_cluster_center: Optional[bool] = True,
                  with_voxel_center: Optional[bool] = True,
@@ -50,14 +50,18 @@ class PillarFeatureNet(nn.Module):
                  norm_cfg: Optional[dict] = dict(
                      type='BN1d', eps=1e-3, momentum=0.01),
                  mode: Optional[str] = 'max',
-                 legacy: Optional[bool] = True):
+                 legacy: Optional[bool] = True,
+                 use_voxel_center_z: Optional[bool] = True, ):
         super(PillarFeatureNet, self).__init__()
         assert len(feat_channels) > 0
         self.legacy = legacy
+        self.use_voxel_center_z = use_voxel_center_z
         if with_cluster_center:
             in_channels += 3
         if with_voxel_center:
-            in_channels += 3
+            in_channels += 2
+        if self.use_voxel_center_z:
+            in_channels += 1
         if with_distance:
             in_channels += 1
         self._with_distance = with_distance
@@ -110,35 +114,38 @@ class PillarFeatureNet(nn.Module):
         if self._with_cluster_center:
             points_mean = features[:, :, :3].sum(
                 dim=1, keepdim=True) / num_points.type_as(features).view(
-                    -1, 1, 1)
+                -1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             features_ls.append(f_cluster)
 
         # Find distance of x, y, and z from pillar center
         dtype = features.dtype
         if self._with_voxel_center:
+            center_feature_size = 3 if self.use_voxel_center_z else 2
             if not self.legacy:
-                f_center = torch.zeros_like(features[:, :, :3])
+                f_center = torch.zeros_like(features[:, :, :center_feature_size])
                 f_center[:, :, 0] = features[:, :, 0] - (
-                    coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
-                    self.x_offset)
+                        coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
+                        self.x_offset)
                 f_center[:, :, 1] = features[:, :, 1] - (
-                    coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
-                    self.y_offset)
-                f_center[:, :, 2] = features[:, :, 2] - (
-                    coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
-                    self.z_offset)
+                        coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
+                        self.y_offset)
+                if self.use_voxel_center_z:
+                    f_center[:, :, 2] = features[:, :, 2] - (
+                            coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
+                            self.z_offset)
             else:
-                f_center = features[:, :, :3]
+                f_center = features[:, :, :center_feature_size]
                 f_center[:, :, 0] = f_center[:, :, 0] - (
-                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
-                    self.x_offset)
+                        coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
+                        self.x_offset)
                 f_center[:, :, 1] = f_center[:, :, 1] - (
-                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
-                    self.y_offset)
-                f_center[:, :, 2] = f_center[:, :, 2] - (
-                    coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
-                    self.z_offset)
+                        coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
+                        self.y_offset)
+                if self.use_voxel_center_z:
+                    f_center[:, :, 2] = f_center[:, :, 2] - (
+                            coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
+                            self.z_offset)
             features_ls.append(f_center)
 
         if self._with_distance:
@@ -193,7 +200,7 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
 
     def __init__(self,
                  in_channels: Optional[int] = 4,
-                 feat_channels: Optional[tuple] = (64, ),
+                 feat_channels: Optional[tuple] = (64,),
                  with_distance: Optional[bool] = False,
                  with_cluster_center: Optional[bool] = True,
                  with_voxel_center: Optional[bool] = True,
@@ -264,15 +271,15 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
         canvas = voxel_mean.new_zeros(canvas_channel, canvas_len)
         # Only include non-empty pillars
         indices = (
-            voxel_coors[:, 0] * canvas_y * canvas_x +
-            voxel_coors[:, 2] * canvas_x + voxel_coors[:, 3])
+                voxel_coors[:, 0] * canvas_y * canvas_x +
+                voxel_coors[:, 2] * canvas_x + voxel_coors[:, 3])
         # Scatter the blob back to the canvas
         canvas[:, indices.long()] = voxel_mean.t()
 
         # Step 2: get voxel mean for each point
         voxel_index = (
-            pts_coors[:, 0] * canvas_y * canvas_x +
-            pts_coors[:, 2] * canvas_x + pts_coors[:, 3])
+                pts_coors[:, 0] * canvas_y * canvas_x +
+                pts_coors[:, 2] * canvas_x + pts_coors[:, 3])
         center_per_point = canvas[:, voxel_index.long()].t()
         return center_per_point
 
@@ -301,11 +308,11 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
         if self._with_voxel_center:
             f_center = features.new_zeros(size=(features.size(0), 3))
             f_center[:, 0] = features[:, 0] - (
-                coors[:, 3].type_as(features) * self.vx + self.x_offset)
+                    coors[:, 3].type_as(features) * self.vx + self.x_offset)
             f_center[:, 1] = features[:, 1] - (
-                coors[:, 2].type_as(features) * self.vy + self.y_offset)
+                    coors[:, 2].type_as(features) * self.vy + self.y_offset)
             f_center[:, 2] = features[:, 2] - (
-                coors[:, 1].type_as(features) * self.vz + self.z_offset)
+                    coors[:, 1].type_as(features) * self.vz + self.z_offset)
             features_ls.append(f_center)
 
         if self._with_distance:
@@ -324,3 +331,4 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
                 features = torch.cat([point_feats, feat_per_point], dim=1)
 
         return voxel_feats, voxel_coors
+
