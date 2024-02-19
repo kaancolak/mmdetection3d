@@ -12,7 +12,7 @@ from mmdet3d.datasets.nuscenes_dataset import NuScenesDataset
 
 
 @DATASETS.register_module()
-class Tier4Dataset(NuScenesDataset):
+class T4Dataset(NuScenesDataset):
     METAINFO = {
         'classes': ('car', 'truck', 'bus', 'bicycle', 'pedestrian'),
         'version': 'v1.0-trainval',
