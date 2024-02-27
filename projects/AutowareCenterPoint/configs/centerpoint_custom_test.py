@@ -23,7 +23,7 @@ voxel_size=[0.2, 0.2, 8.0,]
 
 data_prefix = dict(img='', pts='', sweeps='')
 data_root = "data/sample_dataset/"
-dataset_type = 'Tier4Dataset'
+dataset_type = 'T4Dataset'
 
 train_ann_file =  dataset_type + '_infos_train.pkl'
 val_ann_file =  dataset_type + '_infos_val.pkl'
@@ -351,7 +351,7 @@ test_dataloader = dict(
             ], type='Pack3DDetInputs'),
         ],
         test_mode=True,
-        type='Tier4Dataset'),
+        type='T4Dataset'),
     drop_last=False,
     num_workers=1,
     persistent_workers=True,

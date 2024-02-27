@@ -192,7 +192,7 @@ def create_groundtruth_database(dataset_class_name,
                     with_label_3d=True)
             ])
 
-    elif dataset_class_name == 'Tier4Dataset':
+    elif dataset_class_name == 'T4Dataset':
         dataset_cfg.update(
             use_valid_flag=True,
             data_prefix=dict(

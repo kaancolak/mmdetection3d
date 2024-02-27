@@ -369,12 +369,12 @@ if __name__ == '__main__':
                 dataset_name='NuScenesDataset',
                 out_dir=args.out_dir,
                 max_sweeps=args.max_sweeps)
-    elif args.dataset == 'Tier4Dataset':
+    elif args.dataset == 'T4Dataset':
         tier4_data_prep(
             root_path=args.root_path,
             info_prefix=args.extra_tag,
             version=args.version,
-            dataset_name='Tier4Dataset',
+            dataset_name='T4Dataset',
             out_dir=args.out_dir,
             max_sweeps=args.max_sweeps)
     elif args.dataset == 'lyft':
