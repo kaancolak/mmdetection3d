@@ -195,8 +195,7 @@ def create_groundtruth_database(dataset_class_name,
     elif dataset_class_name == 'T4Dataset':
         dataset_cfg.update(
             use_valid_flag=True,
-            data_prefix=dict(
-                pts='', img='', sweeps=''),
+            data_prefix=dict(pts='', img='', sweeps=''),
             pipeline=[
                 dict(
                     type='LoadPointsFromFile',

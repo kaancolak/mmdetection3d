@@ -6,9 +6,8 @@ from tools.dataset_converters import indoor_converter as indoor
 from tools.dataset_converters import kitti_converter as kitti
 from tools.dataset_converters import lyft_converter as lyft_converter
 from tools.dataset_converters import nuscenes_converter as nuscenes_converter
-from tools.dataset_converters import tier4dataset_converter as tier4_converter
-
 from tools.dataset_converters import semantickitti_converter
+from tools.dataset_converters import tier4dataset_converter as tier4_converter
 from tools.dataset_converters.create_gt_database import (
     GTDatabaseCreater, create_groundtruth_database)
 from tools.dataset_converters.update_infos_to_v2 import update_pkl_infos
@@ -88,12 +87,13 @@ def nuscenes_data_prep(root_path,
     create_groundtruth_database(dataset_name, root_path, info_prefix,
                                 f'{info_prefix}_infos_train.pkl')
 
+
 def tier4_data_prep(root_path,
-                       info_prefix,
-                       version,
-                       dataset_name,
-                       out_dir,
-                       max_sweeps=1):
+                    info_prefix,
+                    version,
+                    dataset_name,
+                    out_dir,
+                    max_sweeps=1):
     """Prepare data related to Tier4 dataset.
 
     Related data consists of '.pkl' files recording basic infos,

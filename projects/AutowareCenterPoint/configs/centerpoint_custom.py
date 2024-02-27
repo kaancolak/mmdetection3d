@@ -1,5 +1,6 @@
 custom_imports = dict(
-    imports=['projects.AutowareCenterPoint.centerpoint'], allow_failed_imports=False)
+    imports=['projects.AutowareCenterPoint.centerpoint'],
+    allow_failed_imports=False)
 
 auto_scale_lr = dict(base_batch_size=32, enable=False)
 backend_args = None

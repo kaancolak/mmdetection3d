@@ -1,15 +1,30 @@
 custom_imports = dict(
-    imports=['projects.AutowareCenterPoint.centerpoint',
-             'projects.AutowareCenterPoint.datasets',
-             'projects.AutowareCenterPoint.evaluation'], allow_failed_imports=False)
+    imports=[
+        'projects.AutowareCenterPoint.centerpoint',
+        'projects.AutowareCenterPoint.datasets',
+        'projects.AutowareCenterPoint.evaluation'
+    ],
+    allow_failed_imports=False)
 
 auto_scale_lr = dict(base_batch_size=32, enable=False)
 backend_args = None
 
-use_dim =[0,1,2,4,]
+use_dim = [
+    0,
+    1,
+    2,
+    4,
+]
 use_dim_num = 5
 load_dim_num = 5
-point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0,]
+point_cloud_range = [
+    -51.2,
+    -51.2,
+    -5.0,
+    51.2,
+    51.2,
+    3.0,
+]
 
 class_names = [
     'car',
@@ -19,15 +34,19 @@ class_names = [
     'pedestrian',
 ]
 
-voxel_size=[0.2, 0.2, 8.0,]
+voxel_size = [
+    0.2,
+    0.2,
+    8.0,
+]
 
 data_prefix = dict(img='', pts='', sweeps='')
-data_root = "data/sample_dataset/"
+data_root = 'data/sample_dataset/'
 dataset_type = 'T4Dataset'
 
-train_ann_file =  dataset_type + '_infos_train.pkl'
-val_ann_file =  dataset_type + '_infos_val.pkl'
-test_ann_file =  dataset_type + '_infos_train.pkl'
+train_ann_file = dataset_type + '_infos_train.pkl'
+val_ann_file = dataset_type + '_infos_val.pkl'
+test_ann_file = dataset_type + '_infos_train.pkl'
 
 db_info_path = data_root + '/' + dataset_type + '_dbinfos_train.pkl'
 
@@ -170,9 +189,7 @@ model = dict(
             final_kernel=3, init_bias=-2.19, type='SeparateHead'),
         share_conv_channel=64,
         tasks=[
-            dict(
-                class_names=class_names,
-                num_class=5),
+            dict(class_names=class_names, num_class=5),
         ],
         type='CenterHead'),
     pts_middle_encoder=dict(
@@ -357,7 +374,7 @@ test_dataloader = dict(
     persistent_workers=True,
     sampler=dict(shuffle=False, type='DefaultSampler'))
 test_evaluator = dict(
-    ann_file= data_root + test_ann_file,
+    ann_file=data_root + test_ann_file,
     backend_args=None,
     data_root=data_root,
     metric='bbox',
@@ -458,9 +475,7 @@ train_dataloader = dict(
                 dict(
                     point_cloud_range=point_cloud_range,
                     type='ObjectRangeFilter'),
-                dict(
-                    classes=class_names,
-                    type='ObjectNameFilter'),
+                dict(classes=class_names, type='ObjectNameFilter'),
                 dict(type='PointShuffle'),
                 dict(
                     keys=[
@@ -497,7 +512,7 @@ train_pipeline = [
             backend_args=None,
             classes=class_names,
             data_root=data_root,
-            info_path=data_root+ train_ann_file,
+            info_path=data_root + train_ann_file,
             points_loader=dict(
                 backend_args=None,
                 coord_type='LIDAR',
@@ -534,16 +549,9 @@ train_pipeline = [
         flip_ratio_bev_vertical=0.5,
         sync_2d=False,
         type='RandomFlip3D'),
-    dict(
-        point_cloud_range=point_cloud_range
-        ,
-        type='PointsRangeFilter'),
-    dict(
-        point_cloud_range=point_cloud_range,
-        type='ObjectRangeFilter'),
-    dict(
-        classes=class_names,
-        type='ObjectNameFilter'),
+    dict(point_cloud_range=point_cloud_range, type='PointsRangeFilter'),
+    dict(point_cloud_range=point_cloud_range, type='ObjectRangeFilter'),
+    dict(classes=class_names, type='ObjectNameFilter'),
     dict(type='PointShuffle'),
     dict(
         keys=[

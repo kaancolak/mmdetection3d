@@ -3,6 +3,7 @@ import tempfile
 from os import path as osp
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
+import mmcv
 import mmengine
 import numpy as np
 import pyquaternion
@@ -18,11 +19,8 @@ from mmdet3d.models.layers import box3d_multiclass_nms
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import (CameraInstance3DBoxes, LiDARInstance3DBoxes,
                                 bbox3d2result, xywhr2xyxyr)
-
 from projects.AutowareCenterPoint.evaluation.functional import nuscenes_utils
 
-import mmcv
-import mmengine
 
 @METRICS.register_module()
 class NuScenesCustomMetric(BaseMetric):
@@ -54,12 +52,12 @@ class NuScenesCustomMetric(BaseMetric):
             corresponding backend. Defaults to None.
     """
     CLASSES = (
-            "car",
-            "truck",
-            "bus",
-            "bicycle",
-            "pedestrian",
-        )
+        'car',
+        'truck',
+        'bus',
+        'bicycle',
+        'pedestrian',
+    )
 
     NameMapping = {
         'movable_object.barrier': 'barrier',
@@ -242,13 +240,13 @@ class NuScenesCustomMetric(BaseMetric):
 
         output_dir = osp.join(*osp.split(result_path)[:-1])
 
-        result_dict = mmengine.load(result_path)["results"]
-
+        result_dict = mmengine.load(result_path)['results']
 
         tmp_dir = tempfile.TemporaryDirectory()
         assert tmp_dir is not None
 
-        gt_dict = mmengine.load(self._format_gt_to_nusc(tmp_dir.name))["results"]
+        gt_dict = mmengine.load(self._format_gt_to_nusc(
+            tmp_dir.name))['results']
         tmp_dir.cleanup()
 
         nusc_eval = nuscenes_utils.nuScenesDetectionEval(
@@ -256,7 +254,7 @@ class NuScenesCustomMetric(BaseMetric):
             result_boxes=result_dict,
             gt_boxes=gt_dict,
             meta=self.modality,
-            eval_set="val",
+            eval_set='val',
             output_dir=output_dir,
             verbose=False,
         )
@@ -265,10 +263,9 @@ class NuScenesCustomMetric(BaseMetric):
         metrics_summary = metrics.serialize()
 
         metrics_str, ap_dict = nuscenes_utils.format_nuscenes_metrics(
-            metrics_summary, sorted(set(self.CLASSES), key=self.CLASSES.index)
-        )
+            metrics_summary, sorted(set(self.CLASSES), key=self.CLASSES.index))
 
-        detail = dict(result = metrics_str)
+        detail = dict(result=metrics_str)
         return detail
 
     def format_results(
@@ -303,7 +300,6 @@ class NuScenesCustomMetric(BaseMetric):
             tmp_dir = None
         result_dict = dict()
         sample_idx_list = [result['sample_idx'] for result in results]
-
 
         for name in results[0]:
             if 'pred' in name and '3d' in name and name[0] != '_':
@@ -545,8 +541,9 @@ class NuScenesCustomMetric(BaseMetric):
         mmengine.dump(nusc_submissions, res_path)
         return res_path
 
-
-    def _format_gt_to_nusc(self, output_dir: str, pipeline: Optional[List[Dict]] = None):
+    def _format_gt_to_nusc(self,
+                           output_dir: str,
+                           pipeline: Optional[List[Dict]] = None):
         """Convert ground-truth annotations to nuscenes Box format.
         Args:
             output_dir (str): the path to output directory
@@ -579,7 +576,8 @@ class NuScenesCustomMetric(BaseMetric):
                 gt_scores_3d = torch.cat((gt_scores_3d, score_as_torch), 0)
 
                 bbox3d = gt_raw[i]['bbox_3d']
-                bbox3d_np = np.append(np.array(bbox3d), np.array(gt_raw[i]['velocity']))
+                bbox3d_np = np.append(
+                    np.array(bbox3d), np.array(gt_raw[i]['velocity']))
 
                 if i == 0:
                     bboxes_3d = np.array([bbox3d_np])
@@ -587,34 +585,33 @@ class NuScenesCustomMetric(BaseMetric):
                     bboxes_3d = np.vstack([bboxes_3d, np.array(bbox3d_np)])
 
             gt_bboxes_3d = LiDARInstance3DBoxes(
-                           bboxes_3d,
-                           box_dim=bboxes_3d.shape[-1],
-                           origin=(0.5, 0.5, 0.5),
-                       )
+                bboxes_3d,
+                box_dim=bboxes_3d.shape[-1],
+                origin=(0.5, 0.5, 0.5),
+            )
 
             instance_bboxes = dict(
                 labels_3d=gt_labels_3d,
-                bboxes_3d= gt_bboxes_3d,
+                bboxes_3d=gt_bboxes_3d,
             )
 
             if pipeline is not None:
                 instance_bboxes = pipeline(instance_bboxes)
 
             instance_result = dict(
-                labels_3d=instance_bboxes["labels_3d"],
+                labels_3d=instance_bboxes['labels_3d'],
                 scores_3d=gt_scores_3d,
-                bboxes_3d= instance_bboxes["bboxes_3d"],
-                sample_idx = i,
+                bboxes_3d=instance_bboxes['bboxes_3d'],
+                sample_idx=i,
             )
-
 
             annos = []
             boxes, attrs = output_to_nusc_box(instance_result)
-            boxes = lidar_nusc_box_to_global(self.data_infos[sample_id],
-                                             boxes, self.dataset_meta['classes'],
+            boxes = lidar_nusc_box_to_global(self.data_infos[sample_id], boxes,
+                                             self.dataset_meta['classes'],
                                              self.eval_detection_configs)
             for i, box in enumerate(boxes):
-                name = self.dataset_meta['classes'][box.label]        
+                name = self.dataset_meta['classes'][box.label]
                 nusc_anno = dict(
                     sample_token=sample_token,
                     translation=box.center.tolist(),
@@ -628,10 +625,9 @@ class NuScenesCustomMetric(BaseMetric):
                 annos.append(nusc_anno)
             nusc_annos[sample_token] = annos
 
-
         nusc_submissions = {
-            "meta": self.modality,
-            "results": nusc_annos,
+            'meta': self.modality,
+            'results': nusc_annos,
         }
 
         mmengine.mkdir_or_exist(output_dir)
@@ -639,6 +635,7 @@ class NuScenesCustomMetric(BaseMetric):
         print(f'Results writes to {res_path}')
         mmengine.dump(nusc_submissions, res_path)
         return res_path
+
 
 def output_to_nusc_box(
         detection: dict) -> Tuple[List[NuScenesBox], Union[np.ndarray, None]]:
@@ -710,7 +707,7 @@ def output_to_nusc_box(
             'to standard NuScenesBoxes.')
 
     return box_list, attrs
-                                            
+
 
 def lidar_nusc_box_to_global(
         info: dict, boxes: List[NuScenesBox], classes: List[str],

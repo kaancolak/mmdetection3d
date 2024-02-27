@@ -1,18 +1,24 @@
 import argparse
 import os
+from typing import Any, Dict, List, Optional, Tuple
+
 import torch
-from typing import Any, Dict, Optional, Tuple, List
 from mmengine import Config
 from mmengine.registry import MODELS, Registry
 from mmengine.runner import Runner
+
 from mmdet3d.apis import init_model
-from mmdet3d.models.dense_heads.centerpoint_head import SeparateHead, CenterHead
+from mmdet3d.models.dense_heads.centerpoint_head import (CenterHead,
+                                                         SeparateHead)
 from mmdet3d.models.voxel_encoders.utils import get_paddings_indicator
-from projects.AutowareCenterPoint.centerpoint.pillar_encoder_autoware import PillarFeatureNetAutoware
+from projects.AutowareCenterPoint.centerpoint.pillar_encoder_autoware import \
+    PillarFeatureNetAutoware
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Create autoware compitable onnx file from torch checkpoint ')
+    parser = argparse.ArgumentParser(
+        description=
+        'Create autoware compitable onnx file from torch checkpoint ')
     parser.add_argument('--cfg', help='train config file path')
     parser.add_argument('--ckpt', help='checkpoint weeight')
     parser.add_argument('--work-dir', help='the dir to save onnx files')
@@ -22,15 +28,17 @@ def parse_args():
 
 
 class CenterPointToONNX(object):
+
     def __init__(
-            self,
-            config: Config,
-            checkpoint_path: Optional[str] = None,
-            output_path: Optional[str] = None,
+        self,
+        config: Config,
+        checkpoint_path: Optional[str] = None,
+        output_path: Optional[str] = None,
     ):
-        assert isinstance(config, Config), f"expected `mmcv.Config`, but got {type(config)}"
+        assert isinstance(
+            config, Config), f'expected `mmcv.Config`, but got {type(config)}'
         _, ext = os.path.splitext(checkpoint_path)
-        assert ext == ".pth", f"expected .pth model, but got {ext}"
+        assert ext == '.pth', f'expected .pth model, but got {ext}'
 
         self.config = config
         self.checkpoint_path = checkpoint_path
@@ -40,40 +48,49 @@ class CenterPointToONNX(object):
 
     def save_onnx(self) -> None:
         # Overwrite models with Autoware's TensorRT compatible versions
-        self.config.model.pts_voxel_encoder.type = "PillarFeatureNetONNX"
-        self.config.model.pts_bbox_head.type = "CenterHeadONNX"
-        self.config.model.pts_bbox_head.separate_head.type = "SeparateHeadONNX"
+        self.config.model.pts_voxel_encoder.type = 'PillarFeatureNetONNX'
+        self.config.model.pts_bbox_head.type = 'CenterHeadONNX'
+        self.config.model.pts_bbox_head.separate_head.type = 'SeparateHeadONNX'
 
-        model = init_model(self.config, self.checkpoint_path, device="cuda:0")
+        model = init_model(self.config, self.checkpoint_path, device='cuda:0')
         dataloader = Runner.build_dataloader(self.config.test_dataloader)
         batch_dict = next(iter(dataloader))
 
-        voxel_dict = model.data_preprocessor.voxelize(batch_dict["inputs"]["points"], batch_dict)
-        input_features = model.pts_voxel_encoder.get_input_features(voxel_dict["voxels"], voxel_dict["num_points"],
-                                                                    voxel_dict["coors"]).to("cuda:0")
+        voxel_dict = model.data_preprocessor.voxelize(
+            batch_dict['inputs']['points'], batch_dict)
+        input_features = model.pts_voxel_encoder.get_input_features(
+            voxel_dict['voxels'], voxel_dict['num_points'],
+            voxel_dict['coors']).to('cuda:0')
 
         # CenterPoint's PointPillar voxel encoder ONNX conversion
-        pth_onnx_pve = os.path.join(self.output_path, "pts_voxel_encoder_centerpoint_custom.onnx")
+        pth_onnx_pve = os.path.join(
+            self.output_path, 'pts_voxel_encoder_centerpoint_custom.onnx')
         torch.onnx.export(
             model.pts_voxel_encoder,
-            (input_features,),
+            (input_features, ),
             f=pth_onnx_pve,
-            input_names=("input_features",),
-            output_names=("pillar_features",),
+            input_names=('input_features', ),
+            output_names=('pillar_features', ),
             dynamic_axes={
-                "input_features": {0: "num_voxels", 1: "num_max_points"},
-                "pillar_features": {0: "num_voxels"},
+                'input_features': {
+                    0: 'num_voxels',
+                    1: 'num_max_points'
+                },
+                'pillar_features': {
+                    0: 'num_voxels'
+                },
             },
             verbose=False,
             opset_version=11,
         )
-        print(f"Saved pts_voxel_encoder onnx model: {pth_onnx_pve}")
+        print(f'Saved pts_voxel_encoder onnx model: {pth_onnx_pve}')
 
         voxel_features = model.pts_voxel_encoder(input_features)
         voxel_features = voxel_features.squeeze()
 
-        batch_size = voxel_dict["coors"][-1, 0] + 1
-        x = model.pts_middle_encoder(voxel_features, voxel_dict["coors"], batch_size)
+        batch_size = voxel_dict['coors'][-1, 0] + 1
+        x = model.pts_middle_encoder(voxel_features, voxel_dict['coors'],
+                                     batch_size)
 
         # CenterPoint backbone's to neck ONNX conversion
         pts_backbone_neck_head = CenterPointHeadONNX(
@@ -82,32 +99,42 @@ class CenterPointToONNX(object):
             model.pts_bbox_head,
         )
 
-        pth_onnx_backbone_neck_head = os.path.join(self.output_path, "pts_backbone_neck_head_centerpoint_custom.onnx")
+        pth_onnx_backbone_neck_head = os.path.join(
+            self.output_path, 'pts_backbone_neck_head_centerpoint_custom.onnx')
         torch.onnx.export(
             pts_backbone_neck_head,
-            (x,),
+            (x, ),
             f=pth_onnx_backbone_neck_head,
-            input_names=("spatial_features",),
+            input_names=('spatial_features', ),
             output_names=tuple(model.pts_bbox_head.output_names),
             dynamic_axes={
-                name: {0: "batch_size", 2: "H", 3: "W"}
-                for name in ["spatial_features"] + model.pts_bbox_head.output_names
+                name: {
+                    0: 'batch_size',
+                    2: 'H',
+                    3: 'W'
+                }
+                for name in ['spatial_features'] +
+                model.pts_bbox_head.output_names
             },
             verbose=False,
             opset_version=11,
         )
-        print(f"Saved pts_backbone_neck_head onnx model: {pth_onnx_backbone_neck_head}")
+        print(
+            f'Saved pts_backbone_neck_head onnx model: {pth_onnx_backbone_neck_head}'
+        )
 
 
 @MODELS.register_module()
 class PillarFeatureNetONNX(PillarFeatureNetAutoware):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def get_input_features(
-            self, features: torch.Tensor, num_points: torch.Tensor, coors: torch.Tensor
-    ) -> torch.Tensor:
+    def get_input_features(self, features: torch.Tensor,
+                           num_points: torch.Tensor,
+                           coors: torch.Tensor) -> torch.Tensor:
         """Forward function.
+
         Args:
             features (torch.Tensor): Point features or raw points in shape
                 (N, M, C).
@@ -122,7 +149,7 @@ class PillarFeatureNetONNX(PillarFeatureNetAutoware):
         if self._with_cluster_center:
             points_mean = features[:, :, :3].sum(
                 dim=1, keepdim=True) / num_points.type_as(features).view(
-                -1, 1, 1)
+                    -1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             features_ls.append(f_cluster)
 
@@ -131,29 +158,30 @@ class PillarFeatureNetONNX(PillarFeatureNetAutoware):
         if self._with_voxel_center:
             center_feature_size = 3 if self.use_voxel_center_z else 2
             if not self.legacy:
-                f_center = torch.zeros_like(features[:, :, :center_feature_size])
+                f_center = torch.zeros_like(
+                    features[:, :, :center_feature_size])
                 f_center[:, :, 0] = features[:, :, 0] - (
-                        coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
-                        self.x_offset)
+                    coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
+                    self.x_offset)
                 f_center[:, :, 1] = features[:, :, 1] - (
-                        coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
-                        self.y_offset)
+                    coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
+                    self.y_offset)
                 if self.use_voxel_center_z:
                     f_center[:, :, 2] = features[:, :, 2] - (
-                            coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
-                            self.z_offset)
+                        coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
+                        self.z_offset)
             else:
                 f_center = features[:, :, :center_feature_size]
                 f_center[:, :, 0] = f_center[:, :, 0] - (
-                        coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
-                        self.x_offset)
+                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
+                    self.x_offset)
                 f_center[:, :, 1] = f_center[:, :, 1] - (
-                        coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
-                        self.y_offset)
+                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
+                    self.y_offset)
                 if self.use_voxel_center_z:
                     f_center[:, :, 2] = f_center[:, :, 2] - (
-                            coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
-                            self.z_offset)
+                        coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
+                        self.z_offset)
             features_ls.append(f_center)
 
         if self._with_distance:
@@ -170,10 +198,11 @@ class PillarFeatureNetONNX(PillarFeatureNetAutoware):
         return features
 
     def forward(
-            self,
-            features: torch.Tensor,
+        self,
+        features: torch.Tensor,
     ) -> torch.Tensor:
         """Forward function.
+
         Args:
             features (torch.Tensor): Point features in shape (N, M, C).
             num_points (torch.Tensor): Number of points in each pillar.
@@ -190,23 +219,25 @@ class PillarFeatureNetONNX(PillarFeatureNetAutoware):
 
 @MODELS.register_module()
 class SeparateHeadONNX(SeparateHead):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         # Order output's of the heads
-        rot_heads = {k: None for k in self.heads.keys() if "rot" in k}
+        rot_heads = {k: None for k in self.heads.keys() if 'rot' in k}
         self.heads: Dict[str, None] = {
-            "heatmap": None,
-            "reg": None,
-            "height": None,
-            "dim": None,
+            'heatmap': None,
+            'reg': None,
+            'height': None,
+            'dim': None,
             **rot_heads,
-            "vel": None,
+            'vel': None,
         }
 
 
 @MODELS.register_module()
 class CenterHeadONNX(CenterHead):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -220,7 +251,9 @@ class CenterHeadONNX(CenterHead):
         Returns:
             pred (Tuple[torch.Tensor]): Output results for tasks.
         """
-        assert len(x) == 1, "The input of CenterHeadONNX must be a single-level feature"
+        assert len(
+            x
+        ) == 1, 'The input of CenterHeadONNX must be a single-level feature'
 
         x = self.shared_conv(x[0])
         head_tensors: Dict[str, torch.Tensor] = self.task_heads[0](x)
@@ -234,7 +267,8 @@ class CenterHeadONNX(CenterHead):
 
 class CenterPointHeadONNX(torch.nn.Module):
 
-    def __init__(self, backbone: torch.nn.Module, neck: torch.nn.Module, bbox_head: torch.nn.Module):
+    def __init__(self, backbone: torch.nn.Module, neck: torch.nn.Module,
+                 bbox_head: torch.nn.Module):
         super(CenterPointHeadONNX, self).__init__()
         self.backbone: torch.nn.Module = backbone
         self.neck: torch.nn.Module = neck
@@ -265,7 +299,8 @@ def main():
     args = parse_args()
 
     cfg = Config.fromfile(args.cfg)
-    det = CenterPointToONNX(config=cfg, checkpoint_path=args.ckpt, output_path=args.work_dir)
+    det = CenterPointToONNX(
+        config=cfg, checkpoint_path=args.ckpt, output_path=args.work_dir)
     det.save_onnx()
 
 

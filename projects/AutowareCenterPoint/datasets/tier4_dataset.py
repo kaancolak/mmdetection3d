@@ -1,21 +1,22 @@
-from os import path as osp
 import os
+from os import path as osp
 from typing import Callable, List, Union
 
 import numpy as np
 
+# from .det3d_dataset import Det3DDataset
+from mmdet3d.datasets.nuscenes_dataset import NuScenesDataset
 from mmdet3d.registry import DATASETS
 from mmdet3d.structures import LiDARInstance3DBoxes
 from mmdet3d.structures.bbox_3d.cam_box3d import CameraInstance3DBoxes
-# from .det3d_dataset import Det3DDataset
-from mmdet3d.datasets.nuscenes_dataset import NuScenesDataset
 
 
 @DATASETS.register_module()
 class T4Dataset(NuScenesDataset):
     METAINFO = {
         'classes': ('car', 'truck', 'bus', 'bicycle', 'pedestrian'),
-        'version': 'v1.0-trainval',
+        'version':
+        'v1.0-trainval',
         'palette': [
             (255, 158, 0),  # Orange
             (255, 99, 71),  # Tomato
@@ -25,12 +26,14 @@ class T4Dataset(NuScenesDataset):
         ]
     }
 
-    def __init__(self,
-                 box_type_3d: str = 'LiDAR',
-                 load_type: str = 'frame_based',
-                 with_velocity: bool = True,
-                 use_valid_flag: bool = False,
-                 **kwargs,) -> None:
+    def __init__(
+        self,
+        box_type_3d: str = 'LiDAR',
+        load_type: str = 'frame_based',
+        with_velocity: bool = True,
+        use_valid_flag: bool = False,
+        **kwargs,
+    ) -> None:
 
         self.use_valid_flag = use_valid_flag
         self.with_velocity = with_velocity
@@ -70,13 +73,15 @@ class T4Dataset(NuScenesDataset):
                 info['lidar_path'] = info['lidar_points']['lidar_path']
                 if 'lidar_sweeps' in info:
                     for sweep in info['lidar_sweeps']:
-                        file_suffix_splitted = sweep['lidar_points']['lidar_path'].split(os.sep)
+                        file_suffix_splitted = sweep['lidar_points'][
+                            'lidar_path'].split(os.sep)
                         file_suffix = os.sep.join(file_suffix_splitted[-4:])
                         if 'samples' in sweep['lidar_points']['lidar_path']:
                             sweep['lidar_points']['lidar_path'] = osp.join(
                                 self.data_prefix['pts'], file_suffix)
                         else:
-                            sweep['lidar_points']['lidar_path'] = info['lidar_points']['lidar_path']
+                            sweep['lidar_points']['lidar_path'] = info[
+                                'lidar_points']['lidar_path']
 
             if self.modality['use_camera']:
                 for cam_id, img_info in info['images'].items():
@@ -85,8 +90,8 @@ class T4Dataset(NuScenesDataset):
                             cam_prefix = self.data_prefix[cam_id]
                         else:
                             cam_prefix = self.data_prefix.get('img', '')
-                        img_info['img_path'] = osp.join(cam_prefix,
-                                                        img_info['img_path'])
+                        img_info['img_path'] = osp.join(
+                            cam_prefix, img_info['img_path'])
                 if self.default_cam_key is not None:
                     info['img_path'] = info['images'][
                         self.default_cam_key]['img_path']
@@ -109,6 +114,3 @@ class T4Dataset(NuScenesDataset):
                 info['eval_ann_info'] = self.parse_ann_info(info)
 
         return info
-
-
-

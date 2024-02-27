@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
-import yaml
 from collections import OrderedDict
 from os import path as osp
 from typing import List, Tuple, Union
@@ -8,6 +7,7 @@ from typing import List, Tuple, Union
 import mmcv
 import mmengine
 import numpy as np
+import yaml
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
 from pyquaternion import Quaternion
@@ -50,8 +50,8 @@ def create_tier4_infos(root_path,
                 nusc, train_scenes, val_scenes, True, max_sweeps=max_sweeps)
             return train_nusc_infos
 
-    dataset_config = root_path + version + ".yaml"
-    with open(dataset_config, "r") as f:
+    dataset_config = root_path + version + '.yaml'
+    with open(dataset_config, 'r') as f:
         dataset_config_dict = yaml.safe_load(f)
     print(dataset_config_dict)
 
@@ -59,31 +59,36 @@ def create_tier4_infos(root_path,
     all_val_nusc_infos = []
     all_test_nusc_infos = []
 
-    if dataset_config_dict["train"] is not None:
-        for scene in dataset_config_dict["train"]:
-            scene_path = root_path + "/" + scene
-            nusc = NuScenes(version="annotation", dataroot=scene_path, verbose=True)
+    if dataset_config_dict['train'] is not None:
+        for scene in dataset_config_dict['train']:
+            scene_path = root_path + '/' + scene
+            nusc = NuScenes(
+                version='annotation', dataroot=scene_path, verbose=True)
             available_scenes = get_available_scenes(nusc)
             available_scene_tokens = [s['token'] for s in available_scenes]
-            train_nusc_infos, _ = process_scene(nusc, available_scene_tokens, [])
+            train_nusc_infos, _ = process_scene(nusc, available_scene_tokens,
+                                                [])
             all_train_nusc_infos += train_nusc_infos
 
-    if dataset_config_dict["val"] is not None:
-        for scene in dataset_config_dict["val"]:
-            scene_path = root_path  + "/" + scene
-            nusc = NuScenes(version="annotation", dataroot=scene_path, verbose=True)
+    if dataset_config_dict['val'] is not None:
+        for scene in dataset_config_dict['val']:
+            scene_path = root_path + '/' + scene
+            nusc = NuScenes(
+                version='annotation', dataroot=scene_path, verbose=True)
             available_scenes = get_available_scenes(nusc)
             available_scene_tokens = [s['token'] for s in available_scenes]
-            _, val_nusc_infos = process_scene(nusc,[], available_scene_tokens)
+            _, val_nusc_infos = process_scene(nusc, [], available_scene_tokens)
             all_val_nusc_infos += val_nusc_infos
 
-    if dataset_config_dict["test"] is not None:
-        for scene in dataset_config_dict["test"]:
-            scene_path = root_path + "/" + scene
-            nusc = NuScenes(version="annotation", dataroot=scene_path, verbose=True)
+    if dataset_config_dict['test'] is not None:
+        for scene in dataset_config_dict['test']:
+            scene_path = root_path + '/' + scene
+            nusc = NuScenes(
+                version='annotation', dataroot=scene_path, verbose=True)
             available_scenes = get_available_scenes(nusc)
             available_scene_tokens = [s['token'] for s in available_scenes]
-            train_nusc_infos = process_scene(nusc,available_scene_tokens, [], True)
+            train_nusc_infos = process_scene(nusc, available_scene_tokens, [],
+                                             True)
             all_test_nusc_infos += train_nusc_infos
 
     metadata = dict(version=version)
@@ -173,7 +178,7 @@ def _fill_trainval_infos(nusc,
         sd_rec = nusc.get('sample_data', sample['data']['LIDAR_CONCAT'])
         cs_record = nusc.get('calibrated_sensor',
                              sd_rec['calibrated_sensor_token'])
-        
+
         pose_record = nusc.get('ego_pose', sd_rec['ego_pose_token'])
         lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
 
@@ -340,9 +345,9 @@ def obtain_sensor2top(nusc,
     l2e_r_s_mat = Quaternion(l2e_r_s).rotation_matrix
     e2g_r_s_mat = Quaternion(e2g_r_s).rotation_matrix
     R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (
-            np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
+        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
     T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (
-            np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
+        np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
     T -= e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T
                   ) + l2e_t @ np.linalg.inv(l2e_r_mat).T
     sweep['sensor2lidar_rotation'] = R.T  # points @ R.T + T
@@ -548,7 +553,7 @@ def get_2d_boxes(nusc,
 
 
 def post_process_coords(
-        corner_coords: List, imsize: Tuple[int, int] = (1600, 900)
+    corner_coords: List, imsize: Tuple[int, int] = (1600, 900)
 ) -> Union[Tuple[float, float, float, float], None]:
     """Get the intersection of the convex hull of the reprojected bbox corners
     and the image canvas, return None if no intersection.

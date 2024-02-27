@@ -5,8 +5,11 @@ from mmcv.cnn import build_norm_layer
 from mmcv.ops import DynamicScatter
 from torch import Tensor, nn
 
+from mmdet3d.models.voxel_encoders.utils import (PFNLayer,
+                                                 get_paddings_indicator)
 from mmdet3d.registry import MODELS
-from mmdet3d.models.voxel_encoders.utils import PFNLayer, get_paddings_indicator
+
+
 @MODELS.register_module()
 class PillarFeatureNetAutoware(nn.Module):
     """Pillar Feature Net.
@@ -35,20 +38,20 @@ class PillarFeatureNetAutoware(nn.Module):
             the original behavior. Defaults to True.
     """
 
-    def __init__(self,
-                 in_channels: Optional[int] = 4,
-                 feat_channels: Optional[tuple] = (64,),
-                 with_distance: Optional[bool] = False,
-                 with_cluster_center: Optional[bool] = True,
-                 with_voxel_center: Optional[bool] = True,
-                 voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
-                 point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4,
-                                                              40, 1),
-                 norm_cfg: Optional[dict] = dict(
-                     type='BN1d', eps=1e-3, momentum=0.01),
-                 mode: Optional[str] = 'max',
-                 legacy: Optional[bool] = True,
-                 use_voxel_center_z: Optional[bool] = True, ):
+    def __init__(
+        self,
+        in_channels: Optional[int] = 4,
+        feat_channels: Optional[tuple] = (64, ),
+        with_distance: Optional[bool] = False,
+        with_cluster_center: Optional[bool] = True,
+        with_voxel_center: Optional[bool] = True,
+        voxel_size: Optional[Tuple[float]] = (0.2, 0.2, 4),
+        point_cloud_range: Optional[Tuple[float]] = (0, -40, -3, 70.4, 40, 1),
+        norm_cfg: Optional[dict] = dict(type='BN1d', eps=1e-3, momentum=0.01),
+        mode: Optional[str] = 'max',
+        legacy: Optional[bool] = True,
+        use_voxel_center_z: Optional[bool] = True,
+    ):
         super(PillarFeatureNetAutoware, self).__init__()
         assert len(feat_channels) > 0
         self.legacy = legacy
@@ -111,7 +114,7 @@ class PillarFeatureNetAutoware(nn.Module):
         if self._with_cluster_center:
             points_mean = features[:, :, :3].sum(
                 dim=1, keepdim=True) / num_points.type_as(features).view(
-                -1, 1, 1)
+                    -1, 1, 1)
             f_cluster = features[:, :, :3] - points_mean
             features_ls.append(f_cluster)
 
@@ -120,29 +123,30 @@ class PillarFeatureNetAutoware(nn.Module):
         if self._with_voxel_center:
             center_feature_size = 3 if self.use_voxel_center_z else 2
             if not self.legacy:
-                f_center = torch.zeros_like(features[:, :, :center_feature_size])
+                f_center = torch.zeros_like(
+                    features[:, :, :center_feature_size])
                 f_center[:, :, 0] = features[:, :, 0] - (
-                        coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
-                        self.x_offset)
+                    coors[:, 3].to(dtype).unsqueeze(1) * self.vx +
+                    self.x_offset)
                 f_center[:, :, 1] = features[:, :, 1] - (
-                        coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
-                        self.y_offset)
+                    coors[:, 2].to(dtype).unsqueeze(1) * self.vy +
+                    self.y_offset)
                 if self.use_voxel_center_z:
                     f_center[:, :, 2] = features[:, :, 2] - (
-                            coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
-                            self.z_offset)
+                        coors[:, 1].to(dtype).unsqueeze(1) * self.vz +
+                        self.z_offset)
             else:
                 f_center = features[:, :, :center_feature_size]
                 f_center[:, :, 0] = f_center[:, :, 0] - (
-                        coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
-                        self.x_offset)
+                    coors[:, 3].type_as(features).unsqueeze(1) * self.vx +
+                    self.x_offset)
                 f_center[:, :, 1] = f_center[:, :, 1] - (
-                        coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
-                        self.y_offset)
+                    coors[:, 2].type_as(features).unsqueeze(1) * self.vy +
+                    self.y_offset)
                 if self.use_voxel_center_z:
                     f_center[:, :, 2] = f_center[:, :, 2] - (
-                            coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
-                            self.z_offset)
+                        coors[:, 1].type_as(features).unsqueeze(1) * self.vz +
+                        self.z_offset)
             features_ls.append(f_center)
 
         if self._with_distance:

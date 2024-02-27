@@ -10,10 +10,10 @@ Example:
 
 import argparse
 import copy
+import os
 import time
 from os import path as osp
 from pathlib import Path
-import os
 
 import mmengine
 import numpy as np
@@ -388,6 +388,7 @@ def update_nuscenes_infos(pkl_path, out_dir):
 
     mmengine.dump(converted_data_info, out_path, 'pkl')
 
+
 def update_tier4_dataset_infos(pkl_path, out_dir):
     camera_types = [
         'CAM_FRONT',
@@ -405,8 +406,7 @@ def update_tier4_dataset_infos(pkl_path, out_dir):
     data_list = mmengine.load(pkl_path)
 
     METAINFO = {
-        'classes':
-        ('car', 'truck', 'bus', 'bicycle', 'pedestrian'),
+        'classes': ('car', 'truck', 'bus', 'bicycle', 'pedestrian'),
     }
 
     print('Start updating:')

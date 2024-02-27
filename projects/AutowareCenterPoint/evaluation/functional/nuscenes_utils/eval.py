@@ -9,7 +9,9 @@ from nuscenes.eval.common.utils import center_distance
 from nuscenes.eval.detection.data_classes import DetectionBox
 from nuscenes.eval.detection.evaluate import DetectionEval as _DetectionEval
 
-def toEvalBoxes(nusc_boxes: Dict[str, List[Dict]], box_cls: EvalBox = DetectionBox) -> EvalBoxes:
+
+def toEvalBoxes(nusc_boxes: Dict[str, List[Dict]],
+                box_cls: EvalBox = DetectionBox) -> EvalBoxes:
     """
 
     nusc_boxes = {
@@ -56,7 +58,7 @@ class DetectionConfig:
     ):
 
         # assert set(class_range.keys()) == set(DETECTION_NAMES), "Class count mismatch."
-        assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
+        assert dist_th_tp in dist_ths, 'dist_th_tp must be in set of dist_ths.'
 
         self.class_range = class_range
         self.dist_fcn = dist_fcn
@@ -78,46 +80,48 @@ class DetectionConfig:
     def serialize(self) -> dict:
         """Serialize instance into json-friendly format."""
         return {
-            "class_names": self.class_names,
-            "class_range": self.class_range,
-            "dist_fcn": self.dist_fcn,
-            "dist_ths": self.dist_ths,
-            "dist_th_tp": self.dist_th_tp,
-            "min_recall": self.min_recall,
-            "min_precision": self.min_precision,
-            "max_boxes_per_sample": self.max_boxes_per_sample,
-            "mean_ap_weight": self.mean_ap_weight,
+            'class_names': self.class_names,
+            'class_range': self.class_range,
+            'dist_fcn': self.dist_fcn,
+            'dist_ths': self.dist_ths,
+            'dist_th_tp': self.dist_th_tp,
+            'min_recall': self.min_recall,
+            'min_precision': self.min_precision,
+            'max_boxes_per_sample': self.max_boxes_per_sample,
+            'mean_ap_weight': self.mean_ap_weight,
         }
 
     @classmethod
     def deserialize(cls, content: dict):
         """Initialize from serialized dictionary."""
         return cls(
-            content["class_names"],
-            content["class_range"],
-            content["dist_fcn"],
-            content["dist_ths"],
-            content["dist_th_tp"],
-            content["min_recall"],
-            content["min_precision"],
-            content["max_boxes_per_sample"],
-            content["mean_ap_weight"],
+            content['class_names'],
+            content['class_range'],
+            content['dist_fcn'],
+            content['dist_ths'],
+            content['dist_th_tp'],
+            content['min_recall'],
+            content['min_precision'],
+            content['max_boxes_per_sample'],
+            content['mean_ap_weight'],
         )
 
     @property
     def dist_fcn_callable(self):
-        """Return the distance function corresponding to the dist_fcn string."""
-        if self.dist_fcn == "center_distance":
+        """Return the distance function corresponding to the dist_fcn
+        string."""
+        if self.dist_fcn == 'center_distance':
             return center_distance
         else:
-            raise Exception("Error: Unknown distance function %s!" % self.dist_fcn)
+            raise Exception('Error: Unknown distance function %s!' %
+                            self.dist_fcn)
 
 
 class nuScenesDetectionEval(_DetectionEval):
-    """
-    This is the official nuScenes detection evaluation code.
-    Results are written to the provided output_dir.
-    nuScenes uses the following detection metrics:
+    """This is the official nuScenes detection evaluation code. Results are
+    written to the provided output_dir. nuScenes uses the following detection
+    metrics:
+
     - Mean Average Precision (mAP): Uses center-distance as matching criterion; averaged over distance thresholds.
     - True Positive (TP) metrics: Average of translation, velocity, scale, orientation and attribute errors.
     - nuScenes Detection Score (NDS): The weighted sum of the above.
@@ -140,8 +144,8 @@ class nuScenesDetectionEval(_DetectionEval):
         output_dir: Optional[str] = None,
         verbose: bool = True,
     ):
-        """
-        Initialize a DetectionEval object.
+        """Initialize a DetectionEval object.
+
         :param config: A DetectionConfig object.
         :param result_boxes: result bounding boxes.
         :param gt_boxes: ground-truth bounding boxes.
@@ -156,7 +160,7 @@ class nuScenesDetectionEval(_DetectionEval):
         self.verbose = verbose
 
         # Make dirs.
-        self.plot_dir = os.path.join(self.output_dir, "plots")
+        self.plot_dir = os.path.join(self.output_dir, 'plots')
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         if not os.path.isdir(self.plot_dir):
