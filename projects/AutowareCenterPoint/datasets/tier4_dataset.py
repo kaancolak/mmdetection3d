@@ -1,14 +1,10 @@
 import os
 from os import path as osp
-from typing import Callable, List, Union
 
 import numpy as np
 
-# from .det3d_dataset import Det3DDataset
 from mmdet3d.datasets.nuscenes_dataset import NuScenesDataset
 from mmdet3d.registry import DATASETS
-from mmdet3d.structures import LiDARInstance3DBoxes
-from mmdet3d.structures.bbox_3d.cam_box3d import CameraInstance3DBoxes
 
 
 @DATASETS.register_module()

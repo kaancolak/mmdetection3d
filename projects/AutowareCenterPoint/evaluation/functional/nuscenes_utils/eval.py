@@ -1,10 +1,8 @@
-import json
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes
-from nuscenes.eval.common.loaders import load_prediction
 from nuscenes.eval.common.utils import center_distance
 from nuscenes.eval.detection.data_classes import DetectionBox
 from nuscenes.eval.detection.evaluate import DetectionEval as _DetectionEval
@@ -57,8 +55,8 @@ class DetectionConfig:
         mean_ap_weight: int,
     ):
 
-        # assert set(class_range.keys()) == set(DETECTION_NAMES), "Class count mismatch."
-        assert dist_th_tp in dist_ths, 'dist_th_tp must be in set of dist_ths.'
+        assert dist_th_tp in dist_ths, \
+            'dist_th_tp must be in set of dist_ths.'
 
         self.class_range = class_range
         self.dist_fcn = dist_fcn
@@ -122,15 +120,19 @@ class nuScenesDetectionEval(_DetectionEval):
     written to the provided output_dir. nuScenes uses the following detection
     metrics:
 
-    - Mean Average Precision (mAP): Uses center-distance as matching criterion; averaged over distance thresholds.
-    - True Positive (TP) metrics: Average of translation, velocity, scale, orientation and attribute errors.
+    - Mean Average Precision (mAP): Uses center-distance as matching criterion;
+    averaged over distance thresholds.
+    - True Positive (TP) metrics: Average of translation, velocity, scale,
+     orientation and attribute errors.
     - nuScenes Detection Score (NDS): The weighted sum of the above.
     Here is an overview of the functions in this method:
-    - init: Loads GT annotations and predictions stored in JSON format and filters the boxes.
+    - init: Loads GT annotations and predictions stored in
+    JSON format and filters the boxes.
     - run: Performs evaluation and dumps the metric data to disk.
     - render: Renders various plots and dumps to disk.
     We assume that:
-    - Every sample_token is given in the results, although there may be not predictions for that sample.
+    - Every sample_token is given in the results, although there may be
+     not predictions for that sample.
     Please see https://www.nuscenes.org/object-detection for more details.
     """
 
@@ -149,7 +151,8 @@ class nuScenesDetectionEval(_DetectionEval):
         :param config: A DetectionConfig object.
         :param result_boxes: result bounding boxes.
         :param gt_boxes: ground-truth bounding boxes.
-        :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
+        :param eval_set: The dataset split to evaluate on,
+        e.g. train, val or test.
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
         """

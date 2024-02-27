@@ -216,7 +216,7 @@ def _fill_trainval_infos(nusc,
 
         for cam in camera_types:
 
-            if not cam in sample['data']:
+            if cam not in sample['data']:
                 continue
 
             cam_token = sample['data'][cam]
@@ -440,9 +440,10 @@ def get_2d_boxes(nusc,
     # Get the sample data and the sample corresponding to that sample data.
     sd_rec = nusc.get('sample_data', sample_data_token)
 
-    assert sd_rec[
-               'sensor_modality'] == 'camera', 'Error: get_2d_boxes only works' \
-                                               ' for camera sample_data!'
+    assert sd_rec['sensor_modality'] == 'camera', ('Error: get_2d_boxes only '
+                                                   'worksfor camera '
+                                                   'sample_data!')
+
     if not sd_rec['is_key_frame']:
         raise ValueError(
             'The 2D re-projections are available only for keyframes.')

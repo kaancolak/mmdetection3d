@@ -1,8 +1,6 @@
 from typing import Optional, Tuple
 
 import torch
-from mmcv.cnn import build_norm_layer
-from mmcv.ops import DynamicScatter
 from torch import Tensor, nn
 
 from mmdet3d.models.voxel_encoders.utils import (PFNLayer,

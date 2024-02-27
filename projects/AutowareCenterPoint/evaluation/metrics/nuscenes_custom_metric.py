@@ -3,7 +3,6 @@ import tempfile
 from os import path as osp
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-import mmcv
 import mmengine
 import numpy as np
 import pyquaternion
@@ -235,8 +234,6 @@ class NuScenesCustomMetric(BaseMetric):
         Returns:
             Dict[str, float]: Dictionary of evaluation details.
         """
-        from nuscenes import NuScenes
-        from nuscenes.eval.detection.evaluate import NuScenesEval
 
         output_dir = osp.join(*osp.split(result_path)[:-1])
 

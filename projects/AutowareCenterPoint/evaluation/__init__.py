@@ -1,3 +1,4 @@
+# flake8: noqa
 from .functional.nuscenes_utils.eval import (DetectionConfig,
                                              nuScenesDetectionEval)
 from .functional.nuscenes_utils.utils import (
@@ -6,7 +7,7 @@ from .functional.nuscenes_utils.utils import (
 from .metrics.nuscenes_custom_metric import NuScenesCustomMetric
 
 __all__ = [
-    'NuScenesCustomMetric,'
+    'NuScenesCustomMetric'
     'DetectionConfig'
     'nuScenesDetectionEval'
     'class_mapping_kitti2nuscenes'

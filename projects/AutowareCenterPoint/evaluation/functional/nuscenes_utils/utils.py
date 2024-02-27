@@ -234,7 +234,7 @@ def format_nuscenes_metrics(metrics: Dict,
     result_dict: Dict[str, Dict[str, float]] = defaultdict(dict)
     for name in class_names:
         result_dict[name].update({
-            f'mAP':
+            'mAP':
             sum([v for v in metrics['label_aps'][name].values()]) * 100 /
             len(metrics['label_aps'][name])
         })

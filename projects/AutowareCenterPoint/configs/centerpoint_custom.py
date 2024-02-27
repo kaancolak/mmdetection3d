@@ -845,4 +845,5 @@ voxel_size = [
     0.2,
     8,
 ]
-work_dir = './work_dirs/centerpoint_pillar02_second_secfpn_head-circlenms_8xb4-cyclic-20e_nus-3d-CUSTOM'
+work_dir = ('./work_dirs/centerpoint_pillar02_second_'
+            'secfpn_head-circlenms_8xb4-cyclic-20e_nus-3d-CUSTOM')

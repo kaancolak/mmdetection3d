@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from mmengine import Config
@@ -17,8 +17,7 @@ from projects.AutowareCenterPoint.centerpoint.pillar_encoder_autoware import \
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description=
-        'Create autoware compitable onnx file from torch checkpoint ')
+        'Create autoware compatible onnx file from torch checkpoint ')
     parser.add_argument('--cfg', help='train config file path')
     parser.add_argument('--ckpt', help='checkpoint weeight')
     parser.add_argument('--work-dir', help='the dir to save onnx files')
@@ -119,9 +118,8 @@ class CenterPointToONNX(object):
             verbose=False,
             opset_version=11,
         )
-        print(
-            f'Saved pts_backbone_neck_head onnx model: {pth_onnx_backbone_neck_head}'
-        )
+        print(f'Saved pts_backbone_neck_head onnx model:'
+              f' {pth_onnx_backbone_neck_head}')
 
 
 @MODELS.register_module()
@@ -280,7 +278,8 @@ class CenterPointHeadONNX(torch.nn.Module):
             x (torch.Tensor): (B, C, H, W)
         Returns:
             tuple[list[dict[str, any]]]:
-                (num_classes x [num_detect x {'reg', 'height', 'dim', 'rot', 'vel', 'heatmap'}])
+                (num_classes x [num_detect x
+                {'reg', 'height', 'dim', 'rot', 'vel', 'heatmap'}])
         """
         x = self.backbone(x)
         if self.neck is not None:
