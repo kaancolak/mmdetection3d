@@ -3,7 +3,7 @@ import torch
 
 from mmdet3d.registry import MODELS
 from projects.AutowareCenterPoint.centerpoint.pillar_encoder_autoware import \
-    PillarFeatureNetAutoware # noqa: F401
+    PillarFeatureNetAutoware  # noqa: F401
 
 
 def test_pillar_feature_net_autoware():
